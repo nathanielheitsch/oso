@@ -150,8 +150,9 @@ jobs:
       - name: Copy static library.
         run: |
           mkdir -p languages/python/oso/native
-          cp -r oso_static_library_linux/libpolar-musl-x86_64.a languages/python/oso/native/libpolar.a
-          cp -r oso_static_library_linux/polar.h languages/python/oso/native/polar.h
+          ls -la
+          cp -r libpolar-musl-x86_64.a languages/python/oso/native/libpolar.a
+          cp -r polar.h languages/python/oso/native/polar.h
       - name: Copy in readme
         run: |
           rm languages/python/oso/README.md
@@ -186,8 +187,9 @@ jobs:
       - name: Copy static library.
         run: |
           mkdir -p languages/python/oso/native
-          cp -r oso_static_library_macos/libpolar-macOS-arm.a languages/python/oso/native/libpolar.a
-          cp -r oso_static_library_macos/polar.h languages/python/oso/native/polar.h
+          ls -la
+          cp -r libpolar-macOS-arm.a languages/python/oso/native/libpolar.a
+          cp -r polar.h languages/python/oso/native/polar.h
       - name: Copy in readme
         run: |
           rm languages/python/oso/README.md
@@ -210,87 +212,3 @@ jobs:
           include-hidden-files: true
           name: wheel-macos
           path: ./wheelhouse/*.whl
-
-
-  release:
-    name: Create release
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    needs:
-      [
-        build_linux_wheels,
-        build_macos_wheels,
-      ]
-    steps:
-      - name: Set version env
-        id: version
-        env:
-          github_ref: ${{ github.ref }}
-        run: echo "::set-output name=oso_version::${github_ref/refs\/tags\/v/}"
-      - name: Download oso dylibs
-        uses: actions/download-artifact@v4
-        with:
-          name: oso_library
-      - name: Zip libraries
-        run: zip --junk-paths -r oso-lib.zip oso_library/
-      - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v4
-        with:
-          name: wheel
-      - name: Zip wheels
-        run: zip --junk-paths -r oso-python.zip wheel/
-      - name: Download oso gem from package run
-        uses: actions/download-artifact@v4
-        with:
-          name: gem
-      - name: Zip ruby gem
-        run: zip --junk-paths -r oso-ruby.zip gem/
-      - name: Download oso jar from package run
-        uses: actions/download-artifact@v4
-        with:
-          name: jar
-      - name: Zip Java JAR
-        run: zip --junk-paths -r oso-java.zip jar/
-      - name: Download oso javascript package from package run
-        uses: actions/download-artifact@v4
-        with:
-          name: oso_js_node
-      - name: Create JS release artifact
-        working-directory: oso_js_node
-        run: npm pack
-      - name: Download oso go lib
-        uses: actions/download-artifact@v4
-        with:
-          name: go
-      - name: Zip Go source code
-        run: zip -r go-oso.zip go/
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.version.outputs.oso_version }}
-          release_name: oso ${{ steps.version.outputs.oso_version }}
-          body: |
-            oso ${{ steps.version.outputs.oso_version }}
-          draft: false
-          prerelease: true
-      - name: Upload Libraries
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./oso-lib.zip
-          asset_name: oso-lib-${{ steps.version.outputs.oso_version }}.zip
-          asset_content_type: application/zip
-      - name: Upload Python Package
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./oso-python.zip
-          asset_name: oso-python-${{ steps.version.outputs.oso_version }}.zip
-          asset_content_type: application/zip
