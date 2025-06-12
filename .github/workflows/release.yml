@@ -77,11 +77,7 @@ jobs:
           path: |
             target/libpolar-x86_64.so
             target/libpolar-aarch64.so
-      - uses: actions/upload-artifact@v4
-        with:
-          include-hidden-files: true
-          name: oso_library
-          path: polar-c-api/polar.h
+            polar-c-api/polar.h
       - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
@@ -90,15 +86,11 @@ jobs:
             target/libpolar-${{runner.os}}.a
             target/libpolar-musl-x86_64.a
             target/libpolar-musl-aarch64.a
-      - uses: actions/upload-artifact@v4
-        with:
-          include-hidden-files: true
-          name: oso_static_library
-          path: polar-c-api/polar.h
+            polar-c-api/polar.h
 
   macos_libs:
     name: Build release libraries on MacOS
-    runs-on: macos-11
+    runs-on: macos-latest
     needs: [version]
     steps:
       - uses: actions/checkout@v2
@@ -145,12 +137,7 @@ jobs:
             target/libpolar-macOS-fat.a
             target/libpolar-macOS.a
             target/libpolar-macOS-arm.a
-      - uses: actions/upload-artifact@v4
-        with:
-          include-hidden-files: true
-          name: oso_static_library
-          path: polar-c-api/polar.h
-          if-no-files-found: error
+            polar-c-api/polar.h
 
   build_linux_wheels:
     name: Build wheels on Linux
@@ -259,7 +246,7 @@ jobs:
   validate_python_macos_11:
     name: Test python ${{ matrix.python-version }} on MacOS
     needs: [build_macos_wheels]
-    runs-on: macos-11
+    runs-on: macos-latest
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
