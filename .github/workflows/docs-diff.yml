@@ -23,7 +23,7 @@ jobs:
     needs: check-label
     if: ${{ needs.check-label.outputs.hadLabel == 'false' }}
     steps:
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: cache
         with:
           path: |
@@ -31,7 +31,7 @@ jobs:
           key: docs-${{ github.sha }}
       - uses: actions/checkout@v2
         if: steps.cache.outputs.cache-hit != 'true'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -111,13 +111,13 @@ jobs:
       - name: Get sha of base_ref
         id: sha
         run: 'echo "::set-output name=gitsha::$(git rev-parse HEAD)"'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: cache
         with:
           path: |
             docs/public
           key: docs-${{ steps.sha.outputs.gitsha }}
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry

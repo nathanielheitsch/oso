@@ -27,7 +27,7 @@ jobs:
     needs: [version]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -358,7 +358,7 @@ jobs:
         run: |
           git submodule foreach git remote update
           git submodule foreach '[ -z $(git --no-pager diff origin/main main) ]'
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
