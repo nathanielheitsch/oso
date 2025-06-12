@@ -134,7 +134,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download static libs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: oso_static_library
       - name: Copy static library.
@@ -170,7 +170,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download static libs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: oso_static_library
       - name: Copy static library.
@@ -219,7 +219,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
       - name: "test"
@@ -248,7 +248,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
       - name: "test"
@@ -270,7 +270,7 @@ jobs:
         id: version
         run: echo "::set-output name=oso_version::$(cat VERSION)"
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
       - name: "test python 3.9"
@@ -322,7 +322,7 @@ jobs:
         id: version
         run: echo "::set-output name=oso_version::$(cat VERSION)"
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
       - run: docker run --rm --env OSO_VERSION -v `pwd`:/oso python:${{ matrix.python-version }}-alpine oso/scripts/test_musl.sh
@@ -400,38 +400,38 @@ jobs:
           github_ref: ${{ github.ref }}
         run: echo "::set-output name=oso_version::${github_ref/refs\/tags\/v/}"
       - name: Download oso dylibs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: oso_library
       - name: Zip libraries
         run: zip --junk-paths -r oso-lib.zip oso_library/
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheel
       - name: Zip wheels
         run: zip --junk-paths -r oso-python.zip wheel/
       - name: Download oso gem from package run
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: gem
       - name: Zip ruby gem
         run: zip --junk-paths -r oso-ruby.zip gem/
       - name: Download oso jar from package run
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: jar
       - name: Zip Java JAR
         run: zip --junk-paths -r oso-java.zip jar/
       - name: Download oso javascript package from package run
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: oso_js_node
       - name: Create JS release artifact
         working-directory: oso_js_node
         run: npm pack
       - name: Download oso go lib
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: go
       - name: Zip Go source code
