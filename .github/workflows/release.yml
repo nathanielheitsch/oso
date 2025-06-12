@@ -70,19 +70,19 @@ jobs:
         run: mv target/release/libpolar.so target/libpolar-x86_64.so
       - name: Rename aarch64 dynamic lib
         run: mv target/aarch64-unknown-linux-gnu/release/libpolar.so target/libpolar-aarch64.so
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: oso_library
           path: |
             target/libpolar-x86_64.so
             target/libpolar-aarch64.so
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: oso_library
           path: polar-c-api/polar.h
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: oso_static_library
@@ -90,7 +90,7 @@ jobs:
             target/libpolar-${{runner.os}}.a
             target/libpolar-musl-x86_64.a
             target/libpolar-musl-aarch64.a
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: oso_static_library
@@ -128,7 +128,7 @@ jobs:
         run: lipo -create target/libpolar-macOS.dylib target/libpolar-macOS-arm.dylib -output target/libpolar-macOS-fat.dylib
       - name: Merge static libs into fat static lib
         run: lipo -create target/libpolar-macOS.a target/libpolar-macOS-arm.a -output target/libpolar-macOS-fat.a
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: oso_library
@@ -136,7 +136,7 @@ jobs:
             target/libpolar-macOS-fat.dylib
             target/libpolar-macOS.dylib
             target/libpolar-macOS-arm.dylib
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: oso_static_library
@@ -145,7 +145,7 @@ jobs:
             target/libpolar-macOS-fat.a
             target/libpolar-macOS.a
             target/libpolar-macOS-arm.a
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: oso_static_library
@@ -182,7 +182,7 @@ jobs:
           CIBW_ENVIRONMENT: OSO_ENV=CI
         with:
           package-dir: languages/python/oso
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: wheel
@@ -220,7 +220,7 @@ jobs:
           CIBW_ARCHS: x86_64 arm64 universal2
         with:
           package-dir: languages/python/oso
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: wheel
