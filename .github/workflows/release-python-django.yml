@@ -44,8 +44,9 @@ jobs:
         run: |
           python -m pip wheel --no-deps -w wheelhouse .
         working-directory: languages/python/django-oso
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
+          include-hidden-files: true
           name: wheel
           path: languages/python/django-oso/wheelhouse/*.whl
 
