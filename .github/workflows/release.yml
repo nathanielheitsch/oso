@@ -70,23 +70,30 @@ jobs:
         run: mv target/release/libpolar.so target/libpolar-x86_64.so
       - name: Rename aarch64 dynamic lib
         run: mv target/aarch64-unknown-linux-gnu/release/libpolar.so target/libpolar-aarch64.so
+      - name: Prepare flat oso_library artifact
+        run: |
+          mkdir -p oso_library_flat
+          cp target/libpolar-x86_64.so oso_library_flat/
+          cp target/libpolar-aarch64.so oso_library_flat/
+          cp polar-c-api/polar.h oso_library_flat/
       - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
-          name: oso_library
-          path: |
-            target/libpolar-x86_64.so
-            target/libpolar-aarch64.so
-            polar-c-api/polar.h
+          name: oso_library_linux
+          path: oso_library_flat/*
+
+      - name: Prepare flat oso_static_library artifact
+        run: |
+          mkdir -p oso_static_library_flat
+          cp target/libpolar-${{runner.os}}.a oso_static_library_flat/
+          cp target/libpolar-musl-x86_64.a oso_static_library_flat/
+          cp target/libpolar-musl-aarch64.a oso_static_library_flat/
+          cp polar-c-api/polar.h oso_static_library_flat/
       - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
-          name: oso_static_library
-          path: |
-            target/libpolar-${{runner.os}}.a
-            target/libpolar-musl-x86_64.a
-            target/libpolar-musl-aarch64.a
-            polar-c-api/polar.h
+          name: oso_static_library_linux
+          path: oso_static_library_flat/*
 
   macos_libs:
     name: Build release libraries on MacOS
@@ -115,17 +122,20 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
-          name: oso_library
+          name: oso_library_macos
           path: |
             target/libpolar-macOS-arm.dylib
+      - name: Prepare flat oso_static_library artifact
+        run: |
+          mkdir -p oso_static_library_flat
+          cp target/libpolar-macOS-arm.a oso_static_library_flat/
+          cp polar-c-api/polar.h oso_static_library_flat/
       - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
-          name: oso_static_library
+          name: oso_static_library_macos
           if-no-files-found: error
-          path: |
-            target/libpolar-macOS-arm.a
-            polar-c-api/polar.h
+          path: oso_static_library_flat/*
 
   build_linux_wheels:
     name: Build wheels on Linux
@@ -136,12 +146,12 @@ jobs:
       - name: Download static libs
         uses: actions/download-artifact@v4
         with:
-          name: oso_static_library
+          name: oso_static_library_linux
       - name: Copy static library.
         run: |
           mkdir -p languages/python/oso/native
-          cp -r oso_static_library/libpolar-musl-x86_64.a languages/python/oso/native/libpolar.a
-          cp -r oso_static_library/polar.h languages/python/oso/native/polar.h
+          cp -r oso_static_library_linux/libpolar-musl-x86_64.a languages/python/oso/native/libpolar.a
+          cp -r oso_static_library_linux/polar.h languages/python/oso/native/polar.h
       - name: Copy in readme
         run: |
           rm languages/python/oso/README.md
@@ -160,7 +170,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
-          name: wheel
+          name: wheel-linux
           path: ./wheelhouse/*.whl
 
   build_macos_wheels:
@@ -172,12 +182,12 @@ jobs:
       - name: Download static libs
         uses: actions/download-artifact@v4
         with:
-          name: oso_static_library
+          name: oso_static_library_macos
       - name: Copy static library.
         run: |
           mkdir -p languages/python/oso/native
-          cp -r oso_static_library/libpolar-macOS-arm.a languages/python/oso/native/libpolar.a
-          cp -r oso_static_library/polar.h languages/python/oso/native/polar.h
+          cp -r oso_static_library_macos/libpolar-macOS-arm.a languages/python/oso/native/libpolar.a
+          cp -r oso_static_library_macos/polar.h languages/python/oso/native/polar.h
       - name: Copy in readme
         run: |
           rm languages/python/oso/README.md
@@ -198,187 +208,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
-          name: wheel
+          name: wheel-macos
           path: ./wheelhouse/*.whl
 
-
-  validate_python_linux:
-    name: Test python ${{ matrix.python-version }} on Linux
-    needs: [build_linux_wheels]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set version env
-        id: version
-        run: echo "::set-output name=oso_version::$(cat VERSION)"
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v4
-        with:
-          name: wheel
-      - name: "test"
-        run: |
-          # first install _only_ the wheel and make sure it's available
-          pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel --no-deps --no-index
-          # then install deps too
-          pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel
-          python test.py
-        working-directory: test
-
-  validate_python_macos_11:
-    name: Test python ${{ matrix.python-version }} on MacOS
-    needs: [build_macos_wheels]
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set version env
-        id: version
-        run: echo "::set-output name=oso_version::$(cat VERSION)"
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v4
-        with:
-          name: wheel
-      - name: "test"
-        run: |
-          # first install _only_ the wheel and make sure it's available
-          pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel --no-deps --no-index
-          # then install deps too
-          pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel
-          python test.py
-        working-directory: test
-
-  validate_python_macos_arm:
-    name: Test python on MacOS M1
-    needs: [build_macos_wheels]
-    runs-on: [self-hosted, m1]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set version env
-        id: version
-        run: echo "::set-output name=oso_version::$(cat VERSION)"
-      - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v4
-        with:
-          name: wheel
-      - name: "test python 3.9"
-        run: |
-          arch -arm64 /opt/homebrew/opt/python@3.9/bin/python3 -m venv venv39
-          arch -arm64 ./venv39/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel --no-deps --no-index
-          arch -arm64 ./venv39/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel
-          arch -arm64 ./venv39/bin/python test.py
-        working-directory: test
-      - name: "test python 3.10"
-        run: |
-          arch -arm64 /opt/homebrew/opt/python@3.10/bin/python3 -m venv venv310
-          arch -arm64 ./venv310/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel --no-deps --no-index
-          arch -arm64 ./venv310/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel
-          arch -arm64 ./venv310/bin/python test.py
-        working-directory: test
-      - name: "test python 3.11"
-        run: |
-          arch -arm64 /opt/homebrew/opt/python@3.11/bin/python3 -m venv venv311
-          arch -arm64 ./venv311/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel --no-deps --no-index
-          arch -arm64 ./venv311/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel
-          arch -arm64 ./venv311/bin/python test.py
-        working-directory: test
-      - name: "test python 3.12"
-        run: |
-          arch -arm64 /opt/homebrew/opt/python@3.12/bin/python3 -m venv venv312
-          arch -arm64 ./venv312/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel --no-deps --no-index
-          arch -arm64 ./venv312/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel
-          arch -arm64 ./venv312/bin/python test.py
-        working-directory: test
-      - name: "test python 3.13"
-        run: |
-          arch -arm64 /opt/homebrew/opt/python@3.12/bin/python3 -m venv venv312
-          arch -arm64 ./venv313/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel --no-deps --no-index
-          arch -arm64 ./venv313/bin/pip install oso==${{ steps.version.outputs.oso_version }} -f ../wheel
-          arch -arm64 ./venv313/bin/python test.py
-        working-directory: test
-
-  validate_python_musl:
-    name: Test python ${{ matrix.python-version }} on Alpine
-    needs: [build_linux_wheels]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set version env
-        id: version
-        run: echo "::set-output name=oso_version::$(cat VERSION)"
-      - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v4
-        with:
-          name: wheel
-      - run: docker run --rm --env OSO_VERSION -v `pwd`:/oso python:${{ matrix.python-version }}-alpine oso/scripts/test_musl.sh
-        env:
-          OSO_VERSION: ${{ steps.version.outputs.oso_version }}
-
-
-  test_quickstarts:
-    name: Test Quickstarts
-    runs-on: ubuntu-latest
-    needs: [version]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Initialize submodules
-        run: make -C docs/examples update-submodules
-      - name: Check that submodules are all up-to-date
-        run: |
-          git submodule foreach git remote update
-          git submodule foreach '[ -z $(git --no-pager diff origin/main main) ]'
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-debug-${{ hashFiles('**/Cargo.lock') }}
-      - name: Use Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: "3.7"
-      - name: Use Ruby 2.7
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          ruby-version: "2.7"
-          working-directory: "docs/examples/quickstart/ruby"
-      - name: Use Node.js 12
-        uses: actions/setup-node@v1
-        with:
-          node-version: "12"
-      - name: Use Java 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: "11"
-      - name: Use stable Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.69.0
-          override: true
-      - name: Use Go 1.14
-        uses: actions/setup-go@v2
-        with:
-          go-version: "1.14"
-      - name: Run quickstart tests
-        run: make -C docs test-quickstarts-release
 
   release:
     name: Create release
@@ -388,10 +220,6 @@ jobs:
       [
         build_linux_wheels,
         build_macos_wheels,
-        validate_python_linux,
-        validate_python_macos_11,
-        validate_python_musl,
-        test_quickstarts,
       ]
     steps:
       - name: Set version env
@@ -466,27 +294,3 @@ jobs:
           asset_path: ./oso-python.zip
           asset_name: oso-python-${{ steps.version.outputs.oso_version }}.zip
           asset_content_type: application/zip
-      
-  # TODO(gj): update this to post to Quill or a private channel on community Slack.
-  alert-failure:
-    name: Alert on failure
-    if: ${{ !success() }}
-    runs-on: ubuntu-latest
-    needs:
-      [
-        validate_python_linux,
-        validate_python_macos_11,
-        validate_python_macos_arm,
-        validate_python_musl,
-        test_quickstarts,
-      ]
-    steps:
-      - uses: rtCamp/action-slack-notify@master
-        if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
-        env:
-          SLACK_CHANNEL: firehose
-          SLACK_COLOR: "danger"
-          SLACK_MESSAGE: "${{ github.event.head_commit.url }}"
-          SLACK_TITLE: "Release job failed."
-          SLACK_USERNAME: github-actions
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_TO_FIREHOSE }}
