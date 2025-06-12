@@ -108,25 +108,15 @@ jobs:
           SDKROOT=$(xcrun -sdk macosx11.0 --show-sdk-path) \
             MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx11.0 --show-sdk-platform-version) \
             cargo build --target aarch64-apple-darwin --release -p polar-c-api
-      - name: Rename static lib
-        run: mv target/release/libpolar.a target/libpolar-macOS.a
       - name: Rename static ARM lib
         run: mv target/aarch64-apple-darwin/release/libpolar.a target/libpolar-macOS-arm.a
-      - name: Rename dynamic lib
-        run: mv target/release/libpolar.dylib target/libpolar-macOS.dylib
       - name: Rename dynamic ARM lib
         run: mv target/aarch64-apple-darwin/release/libpolar.dylib target/libpolar-macOS-arm.dylib
-      - name: Merge dynamic libs into fat dynamic lib
-        run: lipo -create target/libpolar-macOS.dylib target/libpolar-macOS-arm.dylib -output target/libpolar-macOS-fat.dylib
-      - name: Merge static libs into fat static lib
-        run: lipo -create target/libpolar-macOS.a target/libpolar-macOS-arm.a -output target/libpolar-macOS-fat.a
       - uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: oso_library
           path: |
-            target/libpolar-macOS-fat.dylib
-            target/libpolar-macOS.dylib
             target/libpolar-macOS-arm.dylib
       - uses: actions/upload-artifact@v4
         with:
@@ -134,8 +124,6 @@ jobs:
           name: oso_static_library
           if-no-files-found: error
           path: |
-            target/libpolar-macOS-fat.a
-            target/libpolar-macOS.a
             target/libpolar-macOS-arm.a
             polar-c-api/polar.h
 
@@ -146,7 +134,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download static libs
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: oso_static_library
       - name: Copy static library.
@@ -177,18 +165,18 @@ jobs:
 
   build_macos_wheels:
     name: Build wheels on MacOS
-    runs-on: macos-12
+    runs-on: macos-latest
     needs: [version, macos_libs]
     steps:
       - uses: actions/checkout@v2
       - name: Download static libs
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: oso_static_library
       - name: Copy static library.
         run: |
           mkdir -p languages/python/oso/native
-          cp -r oso_static_library/libpolar-macOS-fat.a languages/python/oso/native/libpolar.a
+          cp -r oso_static_library/libpolar-macOS-arm.a languages/python/oso/native/libpolar.a
           cp -r oso_static_library/polar.h languages/python/oso/native/polar.h
       - name: Copy in readme
         run: |
@@ -204,7 +192,7 @@ jobs:
           # Used in build.py to find right files
           CIBW_ENVIRONMENT: OSO_ENV=CI
           # Build a macos wheel that works for x86 and ARM
-          CIBW_ARCHS: x86_64 arm64 universal2
+          CIBW_ARCHS: arm64 universal2
         with:
           package-dir: languages/python/oso
       - uses: actions/upload-artifact@v4
@@ -231,7 +219,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: wheel
       - name: "test"
@@ -260,7 +248,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: wheel
       - name: "test"
@@ -282,7 +270,7 @@ jobs:
         id: version
         run: echo "::set-output name=oso_version::$(cat VERSION)"
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: wheel
       - name: "test python 3.9"
@@ -334,7 +322,7 @@ jobs:
         id: version
         run: echo "::set-output name=oso_version::$(cat VERSION)"
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: wheel
       - run: docker run --rm --env OSO_VERSION -v `pwd`:/oso python:${{ matrix.python-version }}-alpine oso/scripts/test_musl.sh
@@ -412,38 +400,38 @@ jobs:
           github_ref: ${{ github.ref }}
         run: echo "::set-output name=oso_version::${github_ref/refs\/tags\/v/}"
       - name: Download oso dylibs
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: oso_library
       - name: Zip libraries
         run: zip --junk-paths -r oso-lib.zip oso_library/
       - name: Download oso python wheels from package run
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: wheel
       - name: Zip wheels
         run: zip --junk-paths -r oso-python.zip wheel/
       - name: Download oso gem from package run
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: gem
       - name: Zip ruby gem
         run: zip --junk-paths -r oso-ruby.zip gem/
       - name: Download oso jar from package run
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: jar
       - name: Zip Java JAR
         run: zip --junk-paths -r oso-java.zip jar/
       - name: Download oso javascript package from package run
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: oso_js_node
       - name: Create JS release artifact
         working-directory: oso_js_node
         run: npm pack
       - name: Download oso go lib
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: go
       - name: Zip Go source code
